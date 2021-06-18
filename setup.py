@@ -93,14 +93,14 @@ class _BuildPy(build_py):
     build_py.run(self)
 
 setup(
-    name='android_env',
+    name='android_env_for_windows',
     version='1.0.0',
     description='AndroidEnv environment and library for training agents.',
     long_description=description,
     author='DeepMind',
     license='Apache License, Version 2.0',
     keywords='Android OS reinforcement-learning',
-    url='https://github.com/deepmind/android_env',
+    url='https://github.com/yizhangliu/android_env_for_windows',
     packages=find_packages(exclude=['examples']),
     setup_requires=[
         'grpcio-tools',
