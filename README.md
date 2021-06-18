@@ -1,6 +1,7 @@
 
-# notes: Thanks very much for deepmind's work.
-        ([AndroidEnv](https://github.com/deepmind/android_env))
+# Notes: Thanks very much for deepmind's work.[AndroidEnv](https://github.com/deepmind/android_env) 
+
+
  I modified some of the code to make them run on windows. You can run:   
 
     python examples\run_random_agent_win32.py
