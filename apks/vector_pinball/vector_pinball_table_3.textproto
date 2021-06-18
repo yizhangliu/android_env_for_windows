@@ -1,0 +1,102 @@
+# Copyright 2021 DeepMind Technologies Limited.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# proto-file: android_env/proto/task.proto
+# proto-message: android_env.Task
+
+id: "vector_pinball_table_3"
+name: "Vector Pinball - Table 3"
+description: "It's a simple vector based pinball game."
+
+setup_steps: [
+  {
+    adb_call: {
+      install_apk: {
+        filesystem: {
+          path: "2019.12.16-vector-pinball-full-debug.apk"
+        }
+      }
+    }
+    success_condition: {
+      check_install: {
+        package_name: "com.dozingcatsoftware.bouncy"
+        timeout_sec: 10.0
+      }
+    }
+  },
+  { adb_call: { rotate: { orientation: PORTRAIT_0 } } }
+]
+
+reset_steps: [
+  { adb_call: { force_stop: { package_name: "com.dozingcatsoftware.bouncy" } } },
+  { adb_call: { clear_cache: { package_name: "com.dozingcatsoftware.bouncy" } } },
+  {
+    adb_call: {
+      grant_permissions: {
+        package_name: "com.dozingcatsoftware.bouncy"
+        permissions: "android.permission.ACCESS_COARSE_LOCATION"
+      }
+    }
+  },
+  {
+    adb_call: {
+      start_activity: {
+        full_activity: "com.dozingcatsoftware.bouncy/.BouncyActivity"
+        extra_args: [
+            "--ez", '"RL_TASK_ENABLED"', '"true"',
+            "--es", '"RL_TASK_GAME_CONFIG"', '"{\\"zoom\\":\\"false\\",\\"independentFlippers\\":true,\\"unlimitedBalls\\":false,\\"numballs\\":3,\\""level"\\":3,\\"useOpenGL\\":true}"'
+        ]
+      }
+    }
+    success_condition: {
+      wait_for_app_screen: {
+        app_screen: {
+          activity: "com.dozingcatsoftware.bouncy/com.dozingcatsoftware.bouncy.BouncyActivity"
+          view_hierarchy_path: [
+          ]
+        }
+        timeout_sec: 10.0
+      }
+      num_retries: 10
+    }
+  },
+  {
+    adb_call: {
+      start_screen_pinning: {
+        full_activity: "com.dozingcatsoftware.bouncy/com.dozingcatsoftware.bouncy.BouncyActivity"
+      }
+    }
+  }
+]
+
+expected_app_screen: {
+  activity: "com.dozingcatsoftware.bouncy/com.dozingcatsoftware.bouncy.BouncyActivity"
+  view_hierarchy_path: [
+  ]
+}
+
+max_duration_sec: 300  # 5 minutes.
+
+log_parsing_config: {
+
+  filters: ["AndroidRLTask:V"]
+
+  log_regexps: {
+    score: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+    reward: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    episode_end: "^episode[ _]end$"
+    extra: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+    json_extra: "^json_extra: (?P<json_extra>.*)$"
+  }
+}

@@ -1,4 +1,9 @@
 
+# notes: Thanks very much for deepmind's work.
+ I modified some of the code to make them run on windows. You can run:
+    python examples\run_random_agent_win32.py
+  
+-----------------------------------------------------------------------------------------
 # AndroidEnv - The Android Learning Environment
 
 <img align="right" src="docs/images/device_control.gif" width="160" height="240">

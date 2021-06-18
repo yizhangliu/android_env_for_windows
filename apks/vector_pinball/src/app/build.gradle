@@ -1,0 +1,27 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        applicationId "com.dozingcatsoftware.bouncy"
+        minSdkVersion 4
+        targetSdkVersion 28
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+// jars and native libraries retrieved from https://oss.sonatype.org/content/repositories/releases/com/badlogicgames/gdx/
+dependencies {
+    implementation files('libs/gdx-box2d-1.9.9.jar')
+    implementation files('libs/gdx-1.9.9.jar')
+
+    implementation project(":rl-task-android")
+    implementation project(":rl-task-java")
+}
