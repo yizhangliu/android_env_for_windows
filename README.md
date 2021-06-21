@@ -6,8 +6,11 @@
 I've modified some code to make it can run on the windows system. You can test it:   
 
     1.pull code to c:/android_env_for_windows
+
     2.cd c:/android_env_for_windows
+
     3.pip install -e .
+
     4.python examples\run_random_agent_win32.py
   
 -----------------------------------------------------------------------------------------
