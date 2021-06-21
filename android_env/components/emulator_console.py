@@ -19,6 +19,7 @@ NOTE: This class will be deprecated in favour of gRPC-based communication.
 """
 
 import os,sys
+import platform
 import telnetlib
 import threading
 import time
@@ -55,6 +56,7 @@ class _FifoReader(threading.Thread):
 
   def __init__(self, fifo=str):
     super(_FifoReader, self).__init__()
+    self.platform_sys = platform.system()
     self._fifo = fifo
     self._latest_observation = None
     self._latest_exception = None
@@ -75,7 +77,7 @@ class _FifoReader(threading.Thread):
     return self._latest_exception
 
   def run(self):
-    if sys.platform != 'win32':
+    if self.platform_sys != 'Windows':
         while True:
           # Check if the caller thread asked this thread to stop running.
           if self._terminate_event.is_set():
@@ -169,6 +171,7 @@ class EmulatorConsole():
       pipe_read_timeout_sec: Maximum amount of time in seconds to wait for
           reading data from a pipe.
     """
+    self.platform_sys = platform.system()
     self._console_port = console_port
     self._tmp_dir = tmp_dir
     self._pipe_read_timeout_sec = pipe_read_timeout_sec
@@ -203,7 +206,7 @@ class EmulatorConsole():
     # Ask the emulator for a screenshot.
     self._connection.write(b'screenrecord screenshot %s\n' % self._fifo.encode('utf-8'))
 
-    if sys.platform != 'win32':
+    if self.platform_sys != 'Windows':
         with self._read_thread.data_ready():
           # Check for outstanding errors before waiting.
           if self._read_thread.latest_exception():
@@ -256,7 +259,7 @@ class EmulatorConsole():
     # do not want to catch it because it may hide other more serious errors.
     # Because we're executing this at the start of the server, we prefer to fail
     # fast and loud.
-    if sys.platform != 'win32':
+    if self.platform_sys != 'Windows':
         os.mkfifo(self._fifo)
     else:
         file = open(self._fifo, 'w')

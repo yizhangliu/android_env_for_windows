@@ -16,6 +16,7 @@
 """A class to manage and control an external ADB process."""
 
 import os,sys
+import platform
 import pathlib
 import re
 import subprocess
@@ -44,6 +45,7 @@ class AdbController():
                device_name: str = '',
                shell_prompt: str = r'generic_x86:/ \$',
                default_timeout: float = _DEFAULT_TIMEOUT_SECONDS):
+    self.platform_sys = platform.system()
     self._adb_path = adb_path
     self._adb_server_port = str(adb_server_port)
     self._apk_path = apk_path
@@ -166,14 +168,14 @@ class AdbController():
       try:
         self._adb_shell.sendline(shell_args)
 
-        if sys.platform == 'win32' and checkStr != '':
+        if self.platform_sys == 'Windows' and checkStr != '':
             ret = self._adb_shell.expect(checkStr, timeout=timeout)
         else:
             ret = self._adb_shell.expect(self._prompt, timeout=timeout)
         # logging.info(f'Executing ADB shell command_2_: {ret} / {self._adb_shell.before}/ {self._adb_shell.after}')
         
         logging.info('Done executing ADB shell command: %s', shell_args)
-        if sys.platform == 'win32':
+        if self.platform_sys == 'Windows':
             output = self._adb_shell.after
         else:
             shell_ret = self._adb_shell.before.partition('\n'.encode('utf-8'))
@@ -186,7 +188,7 @@ class AdbController():
         self._init_shell(timeout=timeout)
       except pexpect.exceptions.TIMEOUT:        
         logging.warning(f'pexpect.exceptions.TIMEOUT___')
-        if sys.platform == 'win32' and self._adb_shell.before != b'':
+        if self.platform_sys == 'Windows' and self._adb_shell.before != b'':
             output = self._adb_shell.before
             self._adb_shell._set_buffer(b'')
             self._adb_shell.before = b''
@@ -221,7 +223,7 @@ class AdbController():
       num_tries += 1
       try:
         logging.info(f'Spawning ADB shell...{sys.platform}')        
-        if sys.platform == 'win32':
+        if self.platform_sys == 'Windows':
             self._adb_shell = pexpect.popen_spawn.PopenSpawn(command, timeout=timeout)
         else:
             self._adb_shell = pexpect.spawn(command, use_poll=True, timeout=timeout)
@@ -230,7 +232,7 @@ class AdbController():
         self._adb_shell.delaybeforesend = None
         self._adb_shell.delayafterread = None
         logging.info(f'Done spawning ADB shell. Consuming first prompt ({timeout} / {num_tries})...')
-        if sys.platform == 'win32':
+        if self.platform_sys == 'Windows':
             self._adb_shell.expect(self._prompt, timeout=timeout, async_=True)
         else:
             self._adb_shell.expect(self._prompt, timeout=timeout)
@@ -443,7 +445,7 @@ class AdbController():
       None if no current activity can be extracted.
     """
     timeout = 10
-    if sys.platform == 'win32':
+    if self.platform_sys == 'Windows':
         visible_task = self._execute_command(['shell', 'am', 'stack', 'list'], timeout=timeout)
     else:
         visible_task = self._execute_command(['shell', 'am', 'stack', 'list', '|', 'grep', '-E', 'visible=true'], timeout=timeout)
@@ -453,7 +455,7 @@ class AdbController():
       return None
 
     visible_task = visible_task.decode('utf-8')
-    if sys.platform == 'win32':
+    if self.platform_sys == 'Windows':
         visible_task_list = re.findall(r"visible=true topActivity=ComponentInfo{(.+?)}", visible_task)
         if visible_task_list == []:
             visible_task = ''
@@ -492,7 +494,7 @@ class AdbController():
     lines = stack_utf8.splitlines()
 
     regex = re.compile(r'^\ *taskId=(?P<id>[0-9]*): %s.*visible=true.*$' % full_activity_name)
-    if sys.platform == 'win32':
+    if self.platform_sys == 'Windows':
         regex = re.compile(r'^\ *taskId=(?P<id>[0-9]*): .* visible=true .*{%s}.*' % full_activity_name)
     matches = [regex.search(line) for line in lines]
     # print(f'___matches={matches}___')
