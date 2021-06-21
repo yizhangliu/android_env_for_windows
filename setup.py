@@ -93,7 +93,7 @@ class _BuildPy(build_py):
     build_py.run(self)
 
 setup(
-    name='android_env_for_windows',
+    name='android_env',
     version='1.0.0',
     description='AndroidEnv environment and library for training agents.',
     long_description=description,
