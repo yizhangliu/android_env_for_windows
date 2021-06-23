@@ -18,7 +18,7 @@
 NOTE: This class will be deprecated in favour of gRPC-based communication.
 """
 
-import os,sys
+import os
 import platform
 import telnetlib
 import threading

@@ -15,7 +15,7 @@
 
 """A class to manage and control an external ADB process."""
 
-import os,sys
+import os
 import platform
 import pathlib
 import re
@@ -32,7 +32,7 @@ import pexpect
 _MAX_INIT_RETRIES = 20
 _INIT_RETRY_SLEEP_SEC = 2.0
 
-_DEFAULT_TIMEOUT_SECONDS = 120.0
+_DEFAULT_TIMEOUT_SECONDS = 10.0 # 120.0
 
 
 class AdbController():
@@ -84,7 +84,7 @@ class AdbController():
     logging.info(f'Initialize the ADB server__{self._device_name} / {self._adb_server_port}')
     device_name_tmp = self._device_name
     self._device_name = ''
-    self._execute_command(['devices'], timeout=timeout)
+    self._execute_command(['devices'], timeout=120.0) # timeout)
     time.sleep(0.2)
     # Subsequent calls will use the device name.
     self._device_name = device_name_tmp
@@ -141,7 +141,6 @@ class AdbController():
 
     try:
       cmd_output = subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=timeout)
-      # print(f'____cmd_output____{cmd_output}___')
       logging.info('Done executing ADB command: %s', command)
       return cmd_output
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
@@ -169,25 +168,24 @@ class AdbController():
         self._adb_shell.sendline(shell_args)
 
         if self.platform_sys == 'Windows' and checkStr != '':
-            ret = self._adb_shell.expect(checkStr, timeout=timeout)
+            self._adb_shell.expect(checkStr, timeout=timeout)
         else:
-            ret = self._adb_shell.expect(self._prompt, timeout=timeout)
-        # logging.info(f'Executing ADB shell command_2_: {ret} / {self._adb_shell.before}/ {self._adb_shell.after}')
+            self._adb_shell.expect(self._prompt, timeout=timeout)
         
         logging.info('Done executing ADB shell command: %s', shell_args)
         if self.platform_sys == 'Windows':
             output = self._adb_shell.after
         else:
             shell_ret = self._adb_shell.before.partition('\n'.encode('utf-8'))
-            logging.info(f'__shell_ret: {shell_ret} ')
+            # logging.info(f'__shell_ret: {shell_ret} ')
             output = shell_ret[2]  # Consume command.
         return output
       except pexpect.exceptions.EOF:
-        logging.exception('Shell command failed_1. Reinitializing the shell.')
+        logging.exception('Shell command failed_EOF. Reinitializing the shell.')
         logging.warning('self._adb_shell.before: %r', self._adb_shell.before)
         self._init_shell(timeout=timeout)
       except pexpect.exceptions.TIMEOUT:        
-        logging.warning(f'pexpect.exceptions.TIMEOUT___')
+        logging.warning(f'pexpect.exceptions.TIMEOUT__1_')
         if self.platform_sys == 'Windows' and self._adb_shell.before != b'':
             output = self._adb_shell.before
             self._adb_shell._set_buffer(b'')
@@ -197,7 +195,7 @@ class AdbController():
                 output = str.encode(checkStr)
             return output
         else:
-            logging.exception('Shell command failed_2. Reinitializing the shell.')
+            logging.exception('Shell command failed_TIMEOUT. Reinitializing the shell.')
             self._init_shell(timeout=timeout)
 
     logging.exception('Reinitializing the shell did not solve the issue.')
@@ -222,11 +220,8 @@ class AdbController():
     while num_tries < _MAX_INIT_RETRIES:
       num_tries += 1
       try:
-        logging.info(f'Spawning ADB shell...{sys.platform}')        
-        if self.platform_sys == 'Windows':
-            self._adb_shell = pexpect.popen_spawn.PopenSpawn(command, timeout=timeout)
-        else:
-            self._adb_shell = pexpect.spawn(command, use_poll=True, timeout=timeout)
+        logging.info(f'Spawning ADB shell...{self.platform_sys}')        
+        self._adb_shell = pexpect.popen_spawn.PopenSpawn(command, timeout=timeout)
         
         # Setting this to None prevents a 50ms wait for each sendline.
         self._adb_shell.delaybeforesend = None
@@ -282,8 +277,9 @@ class AdbController():
 
   def _check_device_is_ready(self, timeout: Optional[float] = None) -> bool:
     """Checks if the device is ready."""
-    logging.info(f'__________________checking device ...___')
+    logging.info(f'__________________checking device_______________')
     required_services = ['window', 'package', 'input', 'display']
+    timeout = 120
     for service in required_services:
       checkStr = f'Service {service}: found'
       check_output = self._execute_command(['shell', 'service', 'check', service], 
@@ -330,13 +326,13 @@ class AdbController():
     """
     apk_file = self._apk_path + os.sep + local_apk_path
     assert os.path.exists(apk_file), ('Could not find local_apk_path :%r' % apk_file)
+    timeout = 60
     self._execute_command(['install', '-r', '-t', '-g', apk_file], timeout=timeout)
 
   def is_package_installed(self,
                            package_name: str,
                            timeout: Optional[float] = None) -> bool:
     """Checks that the given package is installed."""
-    timeout = 5
     packages = self._execute_command(['shell', 'pm', 'list', 'packages'], timeout=timeout)
     if not packages:
       return False
@@ -355,7 +351,6 @@ class AdbController():
                      timeout: Optional[float] = None):
     if extra_args is None:
       extra_args = []
-    timeout = 10
     self._execute_command(
         ['shell', 'am', 'start', '-S', '-n', full_activity] + extra_args,
         timeout=timeout)
@@ -365,7 +360,6 @@ class AdbController():
                    data_uri: str,
                    package_name: str,
                    timeout: Optional[float] = None):
-    timeout = 10
     self._execute_command(
         ['shell', 'am', 'start', '-a', action, '-d', data_uri, package_name],
         timeout=timeout)
@@ -373,7 +367,6 @@ class AdbController():
   def start_accessibility_service(self,
                                   accessibility_service_full_name,
                                   timeout: Optional[float] = None):
-    timeout = 10
     self._execute_command([
         'shell', 'settings', 'put', 'secure', 'enabled_accessibility_services',
         accessibility_service_full_name
@@ -387,7 +380,6 @@ class AdbController():
                 timeout: Optional[float] = None):
     if extra_args is None:
       extra_args = []
-    timeout = 10
     self._execute_command(
         ['shell', 'am', 'broadcast', '-n', receiver, '-a', action] + extra_args,
         timeout=timeout)
@@ -396,21 +388,17 @@ class AdbController():
               prop_name: str,
               value: str,
               timeout: Optional[float] = None):
-    timeout = 10
     self._execute_command(['shell', 'setprop', prop_name, value],
                           timeout=timeout)
 
   def push_file(self, src: str, dest: str, timeout: Optional[float] = None):
-    timeout = 30
     self._execute_command(['push', src, dest], timeout=timeout)
 
   def force_stop(self, package: str, timeout: Optional[float] = None):
-    timeout = 10
     self._execute_command(['shell', 'am', 'force-stop', package], timeout=timeout)
 
   def clear_cache(self, package: str, timeout: Optional[float] = None):
-    timeout = 10
-    self._execute_command(['shell', 'pm', 'clear', package], timeout=timeout, checkStr='Success')
+    self._execute_command(['shell', 'pm', 'clear', package], timeout=timeout)
 
   def grant_permissions(self,
                         package: str,
@@ -418,14 +406,12 @@ class AdbController():
                         timeout: Optional[float] = None):
     for permission in permissions:
       logging.info('Granting permission: %r', permission)
-      timeout = 10
       self._execute_command(['shell', 'pm', 'grant', package, permission], timeout=timeout)
 
   def get_activity_dumpsys(self,
                            package_name: str,
                            timeout: Optional[float] = None) -> Optional[str]:
     """Returns the activity's dumpsys output in a UTF-8 string."""
-    timeout = 10
     dumpsys_activity_output = self._execute_command(['shell', 'dumpsys', 'activity', package_name, package_name], timeout=timeout)
     if dumpsys_activity_output:
       return dumpsys_activity_output.decode('utf-8')
@@ -444,7 +430,6 @@ class AdbController():
     Returns:
       None if no current activity can be extracted.
     """
-    timeout = 10
     if self.platform_sys == 'Windows':
         visible_task = self._execute_command(['shell', 'am', 'stack', 'list'], timeout=timeout)
     else:
@@ -480,7 +465,6 @@ class AdbController():
     if current_task_id == -1:
       logging.info('Could not find task ID for activity [%r]', full_activity)
       return  # Don't execute anything if the task ID can't be found.
-    timeout = 10
     self._execute_command(['shell', 'am', 'task', 'lock', str(current_task_id)],
                           timeout=timeout)
 
@@ -488,7 +472,6 @@ class AdbController():
                              full_activity_name: str,
                              timeout: Optional[float] = None) -> int:
     """Returns the task ID of the given `full_activity_name`."""
-    timeout = 10
     stack = self._execute_command(['shell', 'am', 'stack', 'list'], timeout=timeout)
     stack_utf8 = stack.decode('utf-8')
     lines = stack_utf8.splitlines()
@@ -516,7 +499,7 @@ class AdbController():
     """Returns a (height, width)-tuple representing a screen size in pixels."""
     logging.info(f'Fetching screen dimensions({timeout})...')
     self._wait_for_device(timeout=timeout)
-    adb_output = self._execute_command(['shell', 'wm', 'size'], timeout=timeout, checkStr='Physical\ssize:\s([0-9]+x[0-9]+)')
+    adb_output = self._execute_command(['shell', 'wm', 'size'], timeout=timeout) #, checkStr='Physical\ssize:\s([0-9]+x[0-9]+)')
     assert adb_output, 'Empty response from ADB for screen size.'
     adb_output = adb_output.decode('utf-8')
     adb_output = adb_output.replace('\r\n', '')
@@ -532,7 +515,6 @@ class AdbController():
   def get_orientation(self, timeout: Optional[float] = None) -> Optional[str]:
     """Returns the device orientation."""
     logging.info('Getting orientation...')
-    timeout = 10
     dumpsys = self._execute_command(['shell', 'dumpsys', 'input'],
                                     timeout=timeout)
     # logging.info('dumpsys: %r', dumpsys)
@@ -564,7 +546,6 @@ class AdbController():
                     orientation: task_pb2.AdbCall.Rotate.Orientation,
                     timeout: Optional[float] = None) -> None:
     """Sets the device to the given `orientation`."""
-    timeout = 10
     self._execute_command(['shell', 'settings', 'put', 'system', 'user_rotation', str(orientation)],
                           timeout=timeout)
 
@@ -578,7 +559,6 @@ class AdbController():
     show_touches = 1 if show_touches else 0
     pointer_location = 1 if pointer_location else 0
     self._wait_for_device(timeout=timeout)
-    timeout = 10
     self._execute_command(['shell', 'settings', 'put', 'system', 'show_touches', str(show_touches)],
                           timeout=timeout)
     self._execute_command(['shell', 'settings', 'put', 'system', 'pointer_location', str(pointer_location)],
@@ -599,11 +579,9 @@ class AdbController():
     else:  # Hide both bars.
       command += ['immersive.full=*']
 
-    timeout = 10
     return self._execute_command(command, timeout=timeout)
 
   def disable_animations(self, timeout: Optional[float] = None):
-    timeout = 10
     self._execute_command(
         ['shell', 'settings put global window_animation_scale 0.0'],
         timeout=timeout)
@@ -615,7 +593,6 @@ class AdbController():
         timeout=timeout)
 
   def input_tap(self, x: int, y: int, timeout: Optional[float] = None) -> None:
-    timeout = 10
     self._execute_command(['shell', 'input', 'tap',
                            str(x), str(y)],
                           timeout=timeout)
@@ -623,7 +600,6 @@ class AdbController():
   def input_text(self,
                  input_text: str,
                  timeout: Optional[float] = None) -> Optional[bytes]:
-    timeout = 10
     return self._execute_command(['shell', 'input', 'text', input_text],
                                  timeout=timeout)
 
@@ -650,5 +626,4 @@ class AdbController():
     """
     accepted_key_codes = ['KEYCODE_HOME', 'KEYCODE_BACK', 'KEYCODE_ENTER']
     assert key_code in accepted_key_codes, ('Rejected keycode: %r' % key_code)
-    timeout = 10
     return self._execute_command(['shell', 'input', 'keyevent', key_code], timeout=timeout)

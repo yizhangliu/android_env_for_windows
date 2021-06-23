@@ -24,10 +24,6 @@ import android_env
 from dm_env import specs
 import numpy as np
 
-import shutil
-import sys
-import multiprocessing
-
 FLAGS = flags.FLAGS
 
 # Simulator args.
