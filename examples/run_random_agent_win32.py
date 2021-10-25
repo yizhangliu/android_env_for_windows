@@ -40,7 +40,7 @@ flags.DEFINE_string('apk_path', '../apks/vector_pinball/', 'Path to apk file.')
 
 
 # Experiment args.
-flags.DEFINE_integer('num_steps', 10000, 'Number of steps to take.')
+flags.DEFINE_integer('num_steps',  10000, 'Number of steps to take.')
 
 
 def main(_):
