@@ -35,8 +35,8 @@ flags.DEFINE_string('emulator_path', 'C:/Users/ThinkPad/AppData/Local/Android/Sd
 flags.DEFINE_string('adb_path', 'C:/Users/ThinkPad/AppData/Local/Android/Sdk/platform-tools/adb.exe', 'Path to ADB.')
 
 # Environment args.
-flags.DEFINE_string('task_path', 'C:/android_env_for_windows/apks/vector_pinball/vector_pinball_table_4.textproto', 'Path to task textproto file.')
-flags.DEFINE_string('apk_path', 'C:/android_env_for_windows/apks/vector_pinball/', 'Path to apk file.')
+flags.DEFINE_string('task_path', '../apks/vector_pinball/vector_pinball_table_4.textproto', 'Path to task textproto file.')
+flags.DEFINE_string('apk_path', '../apks/vector_pinball/', 'Path to apk file.')
 
 
 # Experiment args.
