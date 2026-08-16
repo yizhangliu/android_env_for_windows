@@ -1,11 +1,12 @@
 
+
 # Notes: Thanks very much for deepmind's work.     [AndroidEnv](https://github.com/deepmind/android_env) 
 
 
 
 I've modified some code to make it can run on the windows system. You can test it:   
 
-    1.pull code to c:/android_env_for_windows
+    1.git clone https://github.com/yizhangliu/android_env_for_windows.git c:/android_env_for_windows
 
     2.cd c:/android_env_for_windows
 
@@ -13,6 +14,7 @@ I've modified some code to make it can run on the windows system. You can test i
 
     4.python examples\run_random_agent_win32.py
   
+
 -----------------------------------------------------------------------------------------
 # AndroidEnv - The Android Learning Environment
 
